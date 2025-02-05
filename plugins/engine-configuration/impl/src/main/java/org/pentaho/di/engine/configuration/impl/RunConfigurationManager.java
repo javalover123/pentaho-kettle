@@ -32,9 +32,22 @@ public class RunConfigurationManager implements RunConfigurationService {
   private RunConfigurationProvider defaultRunConfigurationProvider;
   private List<RunConfigurationProvider> runConfigurationProviders = new ArrayList<>();
 
-  public static RunConfigurationManager getInstance( CheckedMetaStoreSupplier supplier ) {
-    RunConfigurationProvider provider = new DefaultRunConfigurationProvider( supplier );
-    return new RunConfigurationManager( Collections.singletonList( provider ) );
+  public static RunConfigurationManager getInstance() {
+    if ( null == instance ) {
+      instance = new RunConfigurationManager();
+    }
+    return instance;
+  }
+
+  public static RunConfigurationManager getInstance( Bowl bowl ) {
+
+    CheckedMetaStoreSupplier bowlSupplier = () -> bowl != null ? bowl.getMetastore() :
+        DefaultBowl.getInstance().getMetastore();
+    RunConfigurationProvider provider = new DefaultRunConfigurationProvider( bowlSupplier );
+    List<RunConfigurationProvider> providers = new ArrayList<>();
+    providers.add( provider );
+    providers.add( new SparkRunConfigurationProvider() );
+    return new RunConfigurationManager( providers );
   }
 
   public RunConfigurationManager( List<RunConfigurationProvider> runConfigurationProviders ) {
