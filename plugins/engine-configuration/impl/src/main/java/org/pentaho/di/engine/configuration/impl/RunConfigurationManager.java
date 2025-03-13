@@ -18,7 +18,6 @@ import org.pentaho.di.engine.configuration.api.RunConfigurationExecutor;
 import org.pentaho.di.engine.configuration.api.RunConfigurationProvider;
 import org.pentaho.di.engine.configuration.api.RunConfigurationService;
 import org.pentaho.di.engine.configuration.impl.pentaho.DefaultRunConfigurationProvider;
-import org.pentaho.di.engine.configuration.impl.spark.SparkRunConfigurationProvider;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -44,10 +43,7 @@ public class RunConfigurationManager implements RunConfigurationService {
     CheckedMetaStoreSupplier bowlSupplier = () -> bowl != null ? bowl.getMetastore() :
         DefaultBowl.getInstance().getMetastore();
     RunConfigurationProvider provider = new DefaultRunConfigurationProvider( bowlSupplier );
-    List<RunConfigurationProvider> providers = new ArrayList<>();
-    providers.add( provider );
-    providers.add( new SparkRunConfigurationProvider() );
-    return new RunConfigurationManager( providers );
+    return  new RunConfigurationManager( Collections.singletonList( provider ) );
   }
 
   public RunConfigurationManager( List<RunConfigurationProvider> runConfigurationProviders ) {
@@ -55,7 +51,6 @@ public class RunConfigurationManager implements RunConfigurationService {
   }
 
   private RunConfigurationManager() {
-    this.runConfigurationProviders.add( new SparkRunConfigurationProvider() );
     this.defaultRunConfigurationProvider = new DefaultRunConfigurationProvider();
   }
 
