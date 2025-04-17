@@ -44,6 +44,7 @@ import org.pentaho.di.core.row.value.ValueMetaString;
 import org.pentaho.di.core.util.EnvUtil;
 import org.pentaho.di.core.util.Utils;
 import org.pentaho.di.core.variables.VariableSpace;
+import org.pentaho.di.core.vfs.AliasedFileObject;
 import org.pentaho.di.core.vfs.KettleVFS;
 import org.pentaho.di.core.xml.XMLHandler;
 import org.pentaho.di.i18n.BaseMessages;
@@ -1377,7 +1378,7 @@ public class TextFileInputMeta extends BaseFileInputMeta<BaseFileInputAdditional
       .getFileObject( variableSpace.environmentSubstitute( vfsFileName ), variableSpace );
   }
   @Override
-  public void resolve() {
+  public void resolve( Bowl bowl ) {
     for ( int i = 0; i < inputFiles.fileName.length; i++ ) {
       if ( inputFiles.fileName[i] != null && !inputFiles.fileName[i].isEmpty() ) {
         try {
