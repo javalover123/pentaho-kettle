@@ -111,6 +111,7 @@ import org.pentaho.di.repository.Repository;
 import org.pentaho.di.repository.RepositoryObjectType;
 import org.pentaho.di.repository.RepositoryOperation;
 import org.pentaho.di.trans.DatabaseImpact;
+import org.pentaho.di.trans.DefaultTransFactoryManager;
 import org.pentaho.di.trans.Trans;
 import org.pentaho.di.trans.TransExecutionConfiguration;
 import org.pentaho.di.trans.TransHopMeta;
