@@ -49,6 +49,9 @@ import java.util.Map;
 public abstract class BaseStepHelper implements StepHelperInterface {
 
   protected final LogChannelInterface log;
+  protected static final String  IS_TRANS_REFERENCE = "isTransRef";
+  protected static final String REFERENCE_PATH = "referencePath";
+  protected static final String SEPARATOR = "/";
 
   protected BaseStepHelper() {
     this.log = KettleLogStore.getLogChannelInterfaceFactory().create( this );

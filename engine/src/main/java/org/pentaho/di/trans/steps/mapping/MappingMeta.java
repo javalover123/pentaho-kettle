@@ -45,12 +45,7 @@ import org.pentaho.di.trans.StepWithMappingMeta;
 import org.pentaho.di.trans.Trans;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.TransMeta.TransformationType;
-import org.pentaho.di.trans.step.StepDataInterface;
-import org.pentaho.di.trans.step.StepIOMeta;
-import org.pentaho.di.trans.step.StepIOMetaInterface;
-import org.pentaho.di.trans.step.StepInterface;
-import org.pentaho.di.trans.step.StepMeta;
-import org.pentaho.di.trans.step.StepMetaInterface;
+import org.pentaho.di.trans.step.*;
 import org.pentaho.di.trans.step.errorhandling.Stream;
 import org.pentaho.di.trans.step.errorhandling.StreamIcon;
 import org.pentaho.di.trans.step.errorhandling.StreamInterface.StreamType;
@@ -734,6 +729,11 @@ public class MappingMeta extends StepWithMappingMeta implements StepMetaInterfac
    */
   public void setMappingParameters( MappingParameters mappingParameters ) {
     this.mappingParameters = mappingParameters;
+  }
+
+  @Override
+  public StepHelperInterface getStepHelperInterface() {
+    return new MappingHelper( this );
   }
 
   @Override

@@ -44,12 +44,8 @@ import org.pentaho.di.trans.StepWithMappingMeta;
 import org.pentaho.di.trans.Trans;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.TransMeta.TransformationType;
-import org.pentaho.di.trans.step.StepDataInterface;
-import org.pentaho.di.trans.step.StepIOMeta;
-import org.pentaho.di.trans.step.StepIOMetaInterface;
-import org.pentaho.di.trans.step.StepInterface;
-import org.pentaho.di.trans.step.StepMeta;
-import org.pentaho.di.trans.step.StepMetaInterface;
+import org.pentaho.di.trans.step.*;
+import org.pentaho.di.trans.steps.mapping.MappingHelper;
 import org.pentaho.di.trans.steps.mapping.MappingIODefinition;
 import org.pentaho.di.trans.steps.mapping.MappingParameters;
 import org.pentaho.di.trans.steps.mapping.MappingValueRename;
@@ -423,6 +419,11 @@ public class SimpleMappingMeta extends StepWithMappingMeta implements StepMetaIn
    */
   public void setMappingParameters( MappingParameters mappingParameters ) {
     this.mappingParameters = mappingParameters;
+  }
+
+  @Override
+  public StepHelperInterface getStepHelperInterface() {
+    return new SimpleMappingHelper( this );
   }
 
   @Override
