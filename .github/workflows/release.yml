@@ -97,7 +97,7 @@ jobs:
     - name: Build project
       run: |
         echo "Starting Maven build..."
-        mvn clean package -Dmaven.test.skip=true -B -V \
+        mvn clean package -s $GITHUB_WORKSPACE/settings.xml -Dmaven.test.skip=true -B -V \
           -Dmaven.javadoc.skip=true \
           -Dmaven.source.skip=true \
           -Dcheckstyle.skip=true \
