@@ -63,7 +63,7 @@
     <meta-inject-plugin.version>${project.version}</meta-inject-plugin.version>
     <jms-streaming-plugin.version>${project.version}</jms-streaming-plugin.version>
     <mqtt-streaming-plugin.version>${project.version}</mqtt-streaming-plugin.version>
-    <pentaho-s3-vfs-plugin.version>${project.version}</pentaho-s3-vfs-plugin.version>
+    <pentaho-s3-vfs-plugin.version>9.4.0.0-343</pentaho-s3-vfs-plugin.version>
     <pdi-avro-format-plugin.version>${project.version}</pdi-avro-format-plugin.version>
     <pentaho-metaverse.version>9.4.0.0-SNAPSHOT</pentaho-metaverse.version>
     <pdi-xml-plugin.version>9.4.0.0-SNAPSHOT</pdi-xml-plugin.version>
@@ -662,7 +662,7 @@
     <dependency>
       <groupId>pentaho</groupId>
       <artifactId>pentaho-streaming-kafka-plugin-zip</artifactId>
-      <version>${big-data-plugin.version}</version>
+      <version>9.4.0.0-343</version>
       <type>zip</type>
       <exclusions>
         <exclusion>
