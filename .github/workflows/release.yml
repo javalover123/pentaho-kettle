@@ -91,6 +91,7 @@ jobs:
     - name: Validate dependencies
       run: |
         echo "Validating Maven dependencies..."
+        mvn dependency:purge-local-repository || echo "Purge local repository dependency with warnings"
         mvn dependency:resolve-sources -B -q || echo "Some source dependencies may be missing (non-critical)"
         mvn dependency:analyze -B -q || echo "Dependency analysis completed with warnings"
 
