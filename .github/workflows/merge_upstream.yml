@@ -1,0 +1,44 @@
+# Copy from https://docs.ioiox.com/github/github-actions-workflows-yml.html, thanks!
+name: Merge upstream
+
+env:
+  BRANCH: master
+  USER_NAME: javalover123
+  USER_EMAIL: javalover123@foxmail.com
+  UPSTREAM_REPO: https://github.com/pentaho/pentaho-kettle.git
+
+on:
+  # Manually run
+  workflow_dispatch:
+
+  schedule:
+    # run at 2:30 UTC every Monday
+    - cron:  '30 2 * * 1'
+
+jobs:
+  merge:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@master
+      with:
+        ref: ${{ env.BRANCH }}
+        fetch-depth: 0
+        lfs: true
+
+    - name: Set git identity
+      run : |
+        git config --global user.name "${{ env.USER_NAME }}"
+        git config --global user.email "${{ env.USER_EMAIL }}"
+
+    - name: Load upstream commits
+      run: git pull --no-edit --rebase --strategy-option ours ${{ env.UPSTREAM_REPO }}
+
+    - name: Push commits
+      run: git push -f origin ${{ env.BRANCH }}
+
+    - name: Trigger downstream build workflow
+      uses: peter-evans/repository-dispatch@v2
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        event-type: upstream-sync-completed
