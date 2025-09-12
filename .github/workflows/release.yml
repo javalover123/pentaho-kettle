@@ -1,0 +1,216 @@
+# Copy from https://github.com/tchivs/pentaho-kettle/blob/62d7de87489de5d828d926c68a434f1879a495fa/.github/workflows/release.yml, thanks!
+name: Build and Release Pentaho Kettle
+
+on:
+  # 手动触发
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: 'Release tag (e.g., v11.0.0.0-SNAPSHOT)'
+        required: true
+        default: 'v11.0.0.0-SNAPSHOT'
+      release_name:
+        description: 'Release name'
+        required: true
+        default: 'v11.0.0.0-SNAPSHOT non-production&non-commercial(Unless 4 years later)'
+      release_body:
+        description: 'Release description'
+        required: false
+        default: 'Automated release of Pentaho Kettle distribution packages'
+      is_prerelease:
+        description: 'Mark as pre-release'
+        required: false
+        default: 'true'
+        type: choice
+        options:
+          - 'true'
+          - 'false'
+  
+  # Git hooks触发 (推送标签时)
+  push:
+    tags:
+      - 'v*'
+
+  repository_dispatch:
+    types: [upstream-sync-completed]
+
+env:
+  MAVEN_OPTS: '-Xmx4g -Xms1g'
+  JAVA_VERSION: '17'
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    
+    - name: Set up JDK
+      uses: actions/setup-java@v4
+      with:
+        java-version: ${{ env.JAVA_VERSION }}
+        distribution: 'temurin'
+        # settings-path: ${{ github.workspace }} # location for the settings.xml file
+        cache: maven
+    
+    - name: Configure Git
+      run: |
+        git config --global user.email "action@github.com"
+        git config --global user.name "GitHub Action"
+    
+    - name: Determine release parameters
+      id: release_params
+      run: |
+        if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+          echo "tag=${{ github.event.inputs.release_tag }}" >> $GITHUB_OUTPUT
+          echo "name=${{ github.event.inputs.release_name }}" >> $GITHUB_OUTPUT
+          echo "body=${{ github.event.inputs.release_body }}" >> $GITHUB_OUTPUT
+          echo "prerelease=${{ github.event.inputs.is_prerelease }}" >> $GITHUB_OUTPUT
+        else
+          if [[ "${{ github.event.action }}" == "upstream-sync-completed" ]]; then
+            TAG="v11.0.0.0-SNAPSHOT-$(date +'%Y%m%d%H%M%S')"
+          else
+            # 从Git标签触发
+            TAG=${GITHUB_REF#refs/tags/}
+          fi
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+          echo "name=$TAG non-production&non-commercial(Unless 4 years later)" >> $GITHUB_OUTPUT
+          echo "body=Automated release of Pentaho Kettle distribution packages" >> $GITHUB_OUTPUT
+          if [[ "$TAG" == *"SNAPSHOT"* ]] || [[ "$TAG" == *"alpha"* ]] || [[ "$TAG" == *"beta"* ]] || [[ "$TAG" == *"rc"* ]]; then
+            echo "prerelease=true" >> $GITHUB_OUTPUT
+          else
+            echo "prerelease=false" >> $GITHUB_OUTPUT
+          fi
+        fi
+    
+    - name: Cache Maven dependencies
+      uses: actions/cache@v4
+      with:
+        path: ~/.m2/repository
+        key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+        restore-keys: |
+          ${{ runner.os }}-maven-
+
+    - name: Validate dependencies
+      run: |
+        echo "Validating Maven dependencies..."
+        # mvn dependency:purge-local-repository -DactTransitively=false || echo "Purge local repository dependency with warnings"
+        mvn dependency:resolve-sources -B -q || echo "Some source dependencies may be missing (non-critical)"
+        mvn dependency:analyze -B -q || echo "Dependency analysis completed with warnings"
+
+    - name: Build project
+      run: |
+        echo "Starting Maven build..."
+        mvn clean package -s $GITHUB_WORKSPACE/settings.xml -Dmaven.test.skip=true -B -V \
+          -Dmaven.javadoc.skip=true \
+          -Dmaven.source.skip=true \
+          -Dcheckstyle.skip=true \
+          -Dpmd.skip=true \
+          -Dspotbugs.skip=true \
+          -Denforcer.skip=true \
+          -Dmaven.wagon.http.retryHandler.count=3 \
+          -Dmaven.wagon.httpconnectionManager.ttlSeconds=120
+    
+    - name: Verify build artifacts
+      run: |
+        echo "Checking for build artifacts..."
+        find assemblies -name "*.zip" -type f | head -20
+        
+        # 验证主要分发包是否存在
+        if [ ! -f assemblies/client/target/pdi-ce-*.zip ]; then
+          echo "ERROR: Client distribution package not found!"
+          exit 1
+        fi
+        
+        echo "Build artifacts verified successfully"
+    
+    - name: Collect release artifacts
+      id: collect_artifacts
+      run: |
+        echo "Collecting release artifacts..."
+        mkdir -p release-artifacts
+        
+        # 收集所有assembly生成的zip文件
+        find assemblies -name "*.zip" -type f -exec cp {} release-artifacts/ \;
+        
+        # 列出所有收集到的文件
+        echo "Collected artifacts:"
+        ls -la release-artifacts/
+        
+        # 生成artifacts列表用于后续步骤
+        cd release-artifacts
+        ARTIFACTS=$(ls *.zip | tr '\n' ' ')
+        echo "artifacts=$ARTIFACTS" >> $GITHUB_OUTPUT
+        
+        # 计算文件数量
+        COUNT=$(ls *.zip | wc -l)
+        echo "count=$COUNT" >> $GITHUB_OUTPUT
+        
+        echo "Total artifacts collected: $COUNT"
+    
+    - name: Create or update release
+      id: create_release
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: ${{ steps.release_params.outputs.tag }}
+        name: ${{ steps.release_params.outputs.name }}
+        body: |
+          ${{ steps.release_params.outputs.body }}
+          
+          ## 📦 Distribution Packages
+          
+          This release includes the following Pentaho Kettle distribution packages:
+          
+          - **pdi-ce-*.zip**: Desktop Client Community Edition
+          - **pdi-static-*.zip**: Static resources and configurations  
+          - **pdi-libs-*.zip**: Library dependencies
+          - **pdi-plugins-*.zip**: Plugin modules
+          - **pdi-samples-*.zip**: Sample transformations and jobs
+          
+          ## 🚀 Installation
+          
+          1. Download the appropriate distribution package for your needs
+          2. Extract the zip file to your desired location
+          3. Follow the installation instructions in the extracted directory
+          
+          ## 📋 Build Information
+          
+          - **Commit**: ${{ github.sha }}
+          - **Java Version**: ${{ env.JAVA_VERSION }}
+          - **Artifacts Count**: ${{ steps.collect_artifacts.outputs.count }}
+          
+        draft: false
+        prerelease: ${{ steps.release_params.outputs.prerelease == 'true' }}
+        files: release-artifacts/*.zip
+        token: ${{ secrets.GITHUB_TOKEN }}
+        fail_on_unmatched_files: true
+    
+    - name: Upload build logs on failure
+      if: failure()
+      uses: actions/upload-artifact@v4
+      with:
+        name: build-logs
+        path: |
+          **/target/surefire-reports/
+          **/target/*.log
+          ~/.m2/repository/.cache/
+        retention-days: 7
+    
+    - name: Cleanup
+      if: always()
+      run: |
+        echo "Cleaning up temporary files..."
+        rm -rf release-artifacts
+        echo "Cleanup completed"
+    
+    - name: Release summary
+      if: success()
+      run: |
+        echo "🎉 Release completed successfully!"
+        echo "📦 Release URL: ${{ steps.create_release.outputs.url }}"
+        echo "🏷️ Tag: ${{ steps.release_params.outputs.tag }}"
+        echo "📊 Artifacts: ${{ steps.collect_artifacts.outputs.count }} files uploaded"
