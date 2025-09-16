@@ -36,7 +36,7 @@ on:
 
 env:
   MAVEN_OPTS: '-Xmx4g -Xms1g'
-  JAVA_VERSION: '17'
+  JAVA_VERSION: '8'
 
 jobs:
   build-and-release:
